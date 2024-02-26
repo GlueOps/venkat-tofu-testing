@@ -24,6 +24,7 @@ jobs:
         run: |
           echo "Fetching all branches..."
           git fetch --all
+          git branch --all
 
           echo "Listing all modified files..."
           MODIFIED_FILES=$(git diff --name-only origin/main...HEAD)
