@@ -22,11 +22,18 @@ jobs:
       - name: Find Modified Terraform Directories
         id: set-matrix
         run: |
-          echo "Comparing with the main branch..."
-          git fetch origin main
-          
+          echo "Fetching repository history..."
+          git fetch --no-tags --depth=100 origin main
+          echo "Fetched main branch."
+
+          echo "Current HEAD commit:"
+          git rev-parse HEAD
+          echo "Latest main branch commit:"
+          git rev-parse origin/main
+
           echo "Looking for modified .tf files..."
           FILES=$(git diff --name-only origin/main...HEAD | grep '\.tf$' || echo "")
+          echo "Modified .tf files: $FILES"
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
