@@ -37,10 +37,10 @@ jobs:
       if: env.COMMAND == 'plan'
       uses: dflook/tofu-plan@v1
       with:
-        path: $DIRECTORY
+        path: ${{ env.DIRECTORY }}
 
     - name: tofu apply
       if: env.COMMAND == 'apply'
       uses: dflook/tofu-apply@v1
       with:
-        path: $DIRECTORY
+        path: ${{ env.DIRECTORY }}
