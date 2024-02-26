@@ -1,4 +1,4 @@
-name: tofu Workflow
+name: terraform Workflow
 
 on:
   issue_comment:
@@ -8,11 +8,11 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  tofu-action:
+  terraform-action:
     if: >-
-      contains(github.event.comment.body, 'tofu plan') ||
-      contains(github.event.comment.body, 'tofu apply') ||
-      contains(github.event.comment.body, 'tofu yolo')
+      contains(github.event.comment.body, 'terraform plan') ||
+      contains(github.event.comment.body, 'terraform apply') ||
+      contains(github.event.comment.body, 'terraform yolo')
     runs-on: ubuntu-latest
 
     steps:
@@ -23,27 +23,27 @@ jobs:
       id: extract
       run: |
         COMMENT="${{ github.event.comment.body }}"
-        if [[ "$COMMENT" =~ tofu\ plan\ (.+) ]]; then
+        if [[ "$COMMENT" =~ terraform\ plan\ (.+) ]]; then
           echo "COMMAND=plan" >> $GITHUB_ENV
           DIRECTORY="${BASH_REMATCH[1]}"
-        elif [[ "$COMMENT" =~ tofu\ apply\ (.+) ]]; then
+        elif [[ "$COMMENT" =~ terraform\ apply\ (.+) ]]; then
           echo "COMMAND=apply" >> $GITHUB_ENV
           DIRECTORY="${BASH_REMATCH[1]}"
-        elif [[ "$COMMENT" =~ tofu\ yolo\ (.+) ]]; then
+        elif [[ "$COMMENT" =~ terraform\ yolo\ (.+) ]]; then
           echo "COMMAND=yolo" >> $GITHUB_ENV
           DIRECTORY="${BASH_REMATCH[1]}"
         fi
         echo "DIRECTORY=$DIRECTORY" >> $GITHUB_ENV
 
 
-    - name: tofu plan
+    - name: terraform plan
       if: env.COMMAND == 'plan'
-      uses: dflook/tofu-plan@v1
+      uses: dflook/terraform-plan@v1
       with:
         path: ${{ env.DIRECTORY }}
 
-    - name: tofu apply
+    - name: terraform apply
       if: env.COMMAND == 'apply'
-      uses: dflook/tofu-apply@v1
+      uses: dflook/terraform-apply@v1
       with:
         path: ${{ env.DIRECTORY }}
