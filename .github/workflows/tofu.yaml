@@ -22,18 +22,21 @@ jobs:
         run: |
           echo "Fetching repository history..."
           git fetch --no-tags --depth=100 origin +refs/heads/*:refs/remotes/origin/*
-          
-          echo "Looking for modified .tf files..."
-          PR_NUMBER=$(jq --raw-output .issue.number "$GITHUB_EVENT_PATH")
-          BASE_REF=$(jq --raw-output .pull_request.base.ref "$GITHUB_EVENT_PATH")
-          HEAD_REF=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
 
-          if [[ -z "$PR_NUMBER" ]] || [[ "$BASE_REF" == "null" ]] || [[ "$HEAD_REF" == "null" ]]; then
+          echo "Determining if this is a PR event..."
+          PR_URL=$(jq --raw-output .issue.pull_request.url "$GITHUB_EVENT_PATH")
+          if [ -z "$PR_URL" ] || [ "$PR_URL" == "null" ]; then
             echo "This does not seem to be a Pull Request event."
             echo "::set-output name=matrix::{}"
             exit 0
           fi
 
+          echo "Fetching PR details..."
+          PR_DETAILS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$PR_URL")
+          BASE_REF=$(echo "$PR_DETAILS" | jq --raw-output .base.ref)
+          HEAD_REF=$(echo "$PR_DETAILS" | jq --raw-output .head.ref)
+
+          echo "Looking for modified .tf files..."
           FILES=$(git diff --name-only "origin/$BASE_REF...origin/$HEAD_REF" | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
