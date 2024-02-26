@@ -28,15 +28,23 @@ jobs:
               DIRS+=("$DIR")
             fi
           done
-          JSON_FMT=$(IFS=,; echo "[\"${DIRS[*]}\"]" | sed 's/ /", "/g')
-          echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
+          if [ ${#DIRS[@]} -eq 0 ]; then
+            echo "No Terraform files modified."
+            echo "::set-output name=matrix::{}"
+          else
+            JSON_FMT=$(IFS=,; echo "[{\"directory\":\"${DIRS[*]}\"}]" | sed 's/ /\", \"directory\":\"/g')
+            echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
+          fi
 
   terraform-plan:
     needs: prepare-matrix
-    if: contains(github.event.comment.body, 'terraform plan')
+    if: >-
+      contains(github.event.comment.body, 'terraform plan') &&
+      needs.prepare-matrix.outputs.matrix != '{}'
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix.include)}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -44,6 +52,6 @@ jobs:
       - name: Terraform Plan
         uses: dflook/terraform-plan@v1
         with:
-          path: ${{ matrix.include }}
-  
+          path: ${{ matrix.directory }}
+
   # Additional jobs for 'terraform apply', 'terraform yolo', etc. can be added similarly
