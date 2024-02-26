@@ -28,7 +28,7 @@ jobs:
           git fetch --all
 
           echo "Listing all modified files..."
-          MODIFIED_FILES=$(git diff --name-only origin/main...HEAD)
+          MODIFIED_FILES=$(git diff --name-only main)
           echo "Modified Files: ${MODIFIED_FILES}"
 
           echo "Extracting directory paths..."
