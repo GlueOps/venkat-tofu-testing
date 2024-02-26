@@ -21,7 +21,10 @@ jobs:
         id: set-matrix
         run: |
           echo "Looking for modified .tf files..."
-          FILES=$(git diff --name-only HEAD~1..HEAD | grep '\.tf$' || echo "")
+          # Fetch the base branch to ensure it's available for comparison
+          git fetch origin main:main
+          # Compare current branch with the base branch to find changed files
+          FILES=$(git diff --name-only origin/main...HEAD | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
