@@ -21,17 +21,19 @@ jobs:
         id: set-matrix
         run: |
           FILES=$(git diff --name-only HEAD~1..HEAD | grep '\.tf$' || echo "")
-          DIRS=""
+          DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
-            DIRS="$DIRS $DIR"
+            if [[ ! " ${DIRS[@]} " =~ " ${DIR} " ]]; then
+              DIRS+=("$DIR")
+            fi
           done
-          UNIQUE_DIRS=$(echo $DIRS | tr ' ' '\n' | sort -u | awk '{print "{\"directory\":\""$0"\"}"}')
-          echo "::set-output name=matrix::[$UNIQUE_DIRS]"
+          JSON_FMT=$(IFS=,; echo "[\"${DIRS[*]}\"]" | sed 's/ /", "/g')
+          echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
 
   terraform-plan:
-    if: contains(github.event.comment.body, 'terraform plan')
     needs: prepare-matrix
+    if: contains(github.event.comment.body, 'terraform plan')
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
@@ -42,21 +44,6 @@ jobs:
       - name: Terraform Plan
         uses: dflook/terraform-plan@v1
         with:
-          path: ${{ matrix.directory }}
-
-  terraform-apply:
-    if: contains(github.event.comment.body, 'terraform apply')
-    needs: prepare-matrix
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Terraform Apply
-        uses: dflook/terraform-apply@v1
-        with:
-          path: ${{ matrix.directory }}
-
-  # Repeat for other Terraform commands as necessary
+          path: ${{ matrix.include }}
+  
+  # Additional jobs for 'terraform apply', 'terraform yolo', etc. can be added similarly
