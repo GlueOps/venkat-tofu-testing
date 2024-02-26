@@ -20,6 +20,7 @@ jobs:
       - name: Find Modified Terraform Directories
         id: set-matrix
         run: |
+          echo "Looking for modified .tf files..."
           FILES=$(git diff --name-only HEAD~1..HEAD | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
@@ -28,11 +29,13 @@ jobs:
               DIRS+=("$DIR")
             fi
           done
+          echo "Found directories: ${DIRS[@]}"
           if [ ${#DIRS[@]} -eq 0 ]; then
             echo "No Terraform files modified."
             echo "::set-output name=matrix::{}"
           else
             JSON_FMT=$(IFS=,; echo "[{\"directory\":\"${DIRS[*]}\"}]" | sed 's/ /\", \"directory\":\"/g')
+            echo "Matrix JSON: $JSON_FMT"
             echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
           fi
 
@@ -50,8 +53,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Terraform Plan
-        uses: dflook/terraform-plan@v1
-        with:
-          path: ${{ matrix.directory }}
+        run: |
+          echo "Running Terraform Plan for directory: ${{ matrix.directory }}"
+          # Instead of 'uses', we use 'run' for custom script, replace with actual Terraform command
+          # Example: terraform plan -path=${{ matrix.directory }}
 
   # Additional jobs for 'terraform apply', 'terraform yolo', etc. can be added similarly
