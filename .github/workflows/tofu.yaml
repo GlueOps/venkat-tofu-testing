@@ -16,28 +16,17 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
 
       - name: Find Modified Terraform Directories
         id: set-matrix
         run: |
-          echo "Fetching repository history..."
-          git fetch --no-tags --depth=100 origin +refs/heads/*:refs/remotes/origin/*
-
-          echo "Determining if this is a PR event..."
-          PR_URL=$(jq --raw-output .issue.pull_request.url "$GITHUB_EVENT_PATH")
-          if [ -z "$PR_URL" ] || [ "$PR_URL" == "null" ]; then
-            echo "This does not seem to be a Pull Request event."
-            echo "::set-output name=matrix::{}"
-            exit 0
-          fi
-
-          echo "Fetching PR details..."
-          PR_DETAILS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$PR_URL")
-          BASE_REF=$(echo "$PR_DETAILS" | jq --raw-output .base.ref)
-          HEAD_REF=$(echo "$PR_DETAILS" | jq --raw-output .head.ref)
-
+          echo "Comparing with the main branch..."
+          git fetch origin main
+          
           echo "Looking for modified .tf files..."
-          FILES=$(git diff --name-only "origin/$BASE_REF...origin/$HEAD_REF" | grep '\.tf$' || echo "")
+          FILES=$(git diff --name-only origin/main...HEAD | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
