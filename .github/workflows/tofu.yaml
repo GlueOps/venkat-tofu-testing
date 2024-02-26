@@ -1,22 +1,46 @@
-name: Create terraform plan
+name: tofu Workflow
 
-on: [pull_request]
-
-permissions:
-  contents: read
-  pull-requests: write
+on:
+  issue_comment:
+    types: [created]
 
 jobs:
-  plan:
+  tofu-action:
+    if: >-
+      contains(github.event.comment.body, 'tofu plan') ||
+      contains(github.event.comment.body, 'tofu apply') ||
+      contains(github.event.comment.body, 'tofu yolo')
     runs-on: ubuntu-latest
-    name: Create a plan for an example terraform configuration
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
 
-      - name: terraform plan
-        uses: dflook/tofu-plan@v1
-        with:
-          path: my-terraform-config
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Extract Command and Directory
+      id: extract
+      run: |
+        COMMENT="${{ github.event.comment.body }}"
+        if [[ "$COMMENT" =~ tofu\ plan\ (.+) ]]; then
+          echo "COMMAND=plan" >> $GITHUB_ENV
+          DIRECTORY="${BASH_REMATCH[1]}"
+        elif [[ "$COMMENT" =~ tofu\ apply\ (.+) ]]; then
+          echo "COMMAND=apply" >> $GITHUB_ENV
+          DIRECTORY="${BASH_REMATCH[1]}"
+        elif [[ "$COMMENT" =~ tofu\ yolo\ (.+) ]]; then
+          echo "COMMAND=yolo" >> $GITHUB_ENV
+          DIRECTORY="${BASH_REMATCH[1]}"
+        fi
+        echo "DIRECTORY=$DIRECTORY" >> $GITHUB_ENV
+
+
+    - name: tofu plan
+      if: env.COMMAND == 'plan'
+      uses: dflook/tofu-plan@v1
+      with:
+        path: $DIRECTORY
+
+    - name: tofu apply
+      if: env.COMMAND == 'apply'
+      uses: dflook/tofu-apply@v1
+      with:
+        path: $DIRECTORY
