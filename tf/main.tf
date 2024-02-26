@@ -10,4 +10,3 @@ resource "random_integer" "priority" {
   max = 50000
 }
 
-
