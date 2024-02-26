@@ -21,17 +21,20 @@ jobs:
         id: set-matrix
         run: |
           echo "Fetching repository history..."
-          git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          git fetch --no-tags --depth=100 origin +refs/heads/*:refs/remotes/origin/*
           
           echo "Looking for modified .tf files..."
-          BASE_REF=${{ github.base_ref }}
-          HEAD_REF=${{ github.head_ref }}
-          if [ -z "$BASE_REF" ] || [ -z "$HEAD_REF" ]; then
-            BASE_REF=main
-            HEAD_REF=HEAD
+          PR_NUMBER=$(jq --raw-output .issue.number "$GITHUB_EVENT_PATH")
+          BASE_REF=$(jq --raw-output .pull_request.base.ref "$GITHUB_EVENT_PATH")
+          HEAD_REF=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
+
+          if [[ -z "$PR_NUMBER" ]] || [[ "$BASE_REF" == "null" ]] || [[ "$HEAD_REF" == "null" ]]; then
+            echo "This does not seem to be a Pull Request event."
+            echo "::set-output name=matrix::{}"
+            exit 0
           fi
 
-          FILES=$(git diff --name-only "refs/remotes/origin/$BASE_REF...$HEAD_REF" | grep '\.tf$' || echo "")
+          FILES=$(git diff --name-only "origin/$BASE_REF...origin/$HEAD_REF" | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
