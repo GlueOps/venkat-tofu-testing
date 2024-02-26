@@ -4,9 +4,6 @@ on:
   issue_comment:
     types: [created]
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   prepare-matrix:
     if: >-
@@ -23,31 +20,43 @@ jobs:
       - name: Find Modified Terraform Directories
         id: set-matrix
         run: |
-          FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '\.tf$' || echo "")
+          FILES=$(git diff --name-only HEAD~1..HEAD | grep '\.tf$' || echo "")
           DIRS=""
           for file in $FILES; do
             DIR=$(dirname "$file")
             DIRS="$DIRS $DIR"
           done
-          UNIQUE_DIRS=$(echo $DIRS | tr ' ' '\n' | sort -u | awk '{print "{\"path\":\""$0"\"}"}')
+          UNIQUE_DIRS=$(echo $DIRS | tr ' ' '\n' | sort -u | awk '{print "{\"directory\":\""$0"\"}"}')
           echo "::set-output name=matrix::[$UNIQUE_DIRS]"
 
-  terraform-action:
+  terraform-plan:
+    if: contains(github.event.comment.body, 'terraform plan')
     needs: prepare-matrix
-    if: >-
-      contains(github.event.comment.body, 'terraform plan') ||
-      contains(github.event.comment.body, 'terraform apply') ||
-      contains(github.event.comment.body, 'terraform yolo')
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Run Terraform Action
-        if: contains(github.event.comment.body, 'terraform ' + matrix.command)
-        uses: dflook/terraform-${{ matrix.command }}@v1
+      - name: Terraform Plan
+        uses: dflook/terraform-plan@v1
         with:
-          path: ${{ matrix.path }}
+          path: ${{ matrix.directory }}
+
+  terraform-apply:
+    if: contains(github.event.comment.body, 'terraform apply')
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Terraform Apply
+        uses: dflook/terraform-apply@v1
+        with:
+          path: ${{ matrix.directory }}
+
+  # Repeat for other Terraform commands as necessary
