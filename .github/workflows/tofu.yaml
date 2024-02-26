@@ -20,11 +20,19 @@ jobs:
       - name: Find Modified Terraform Directories
         id: set-matrix
         run: |
+          echo "Fetching repository history..."
+          git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          
           echo "Looking for modified .tf files..."
-          # Fetch the base branch to ensure it's available for comparison
-          git fetch origin main:main
-          # Compare current branch with the base branch to find changed files
-          FILES=$(git diff --name-only origin/main...HEAD | grep '\.tf$' || echo "")
+          BASE_REF=$(jq -r ".pull_request.base.ref" <<< "$GITHUB_EVENT_PATH" || echo "")
+          HEAD_REF=$(jq -r ".pull_request.head.ref" <<< "$GITHUB_EVENT_PATH" || echo "HEAD")
+
+          if [ -z "$BASE_REF" ]; then
+            # Fallback to comparing with main/master if not a PR
+            BASE_REF=main
+          fi
+
+          FILES=$(git diff --name-only "refs/remotes/origin/$BASE_REF...$HEAD_REF" | grep '\.tf$' || echo ""
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
