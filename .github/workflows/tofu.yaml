@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Fetch all history for all branches and tags
 
       - name: Find Modified Terraform Directories
         id: set-matrix
