@@ -40,16 +40,24 @@ jobs:
             if [[ ! " ${DIRS[@]} " =~ " ${DIR} " ]]; then
               DIRS+=("$DIR")
             fi
+          echo "Fetching all branches..."
+          git fetch --all
+
+          echo "Listing all modified files..."
+          MODIFIED_FILES=$(git diff --name-only origin/main...HEAD)
+
+          echo "Extracting directory paths..."
+          DIRS=()
+          for file in $MODIFIED_FILES; do
+            DIR=$(dirname "$file")
+            DIRS+=("$DIR")
           done
-          echo "Found directories: ${DIRS[@]}"
-          if [ ${#DIRS[@]} -eq 0 ]; then
-            echo "No Terraform files modified."
-            echo "::set-output name=matrix::{}"
-          else
-            JSON_FMT=$(IFS=,; echo "[{\"directory\":\"${DIRS[*]}\"}]" | sed 's/ /\", \"directory\":\"/g')
-            echo "Matrix JSON: $JSON_FMT"
-            echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
-          fi
+          UNIQUE_DIRS=($(echo "${DIRS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+          echo "Found directories: ${UNIQUE_DIRS[@]}"
+          JSON_FMT=$(IFS=,; echo "[{\"directory\":\"${UNIQUE_DIRS[*]}\"}]" | sed 's/ /\", \"directory\":\"/g')
+          echo $JSON_FMT
+          echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
 
   terraform-plan:
     needs: prepare-matrix
