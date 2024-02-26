@@ -24,15 +24,14 @@ jobs:
           git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           
           echo "Looking for modified .tf files..."
-          BASE_REF=$(jq -r ".pull_request.base.ref" <<< "$GITHUB_EVENT_PATH" || echo "")
-          HEAD_REF=$(jq -r ".pull_request.head.ref" <<< "$GITHUB_EVENT_PATH" || echo "HEAD")
-
-          if [ -z "$BASE_REF" ]; then
-            # Fallback to comparing with main/master if not a PR
+          BASE_REF=${{ github.base_ref }}
+          HEAD_REF=${{ github.head_ref }}
+          if [ -z "$BASE_REF" ] || [ -z "$HEAD_REF" ]; then
             BASE_REF=main
+            HEAD_REF=HEAD
           fi
 
-          FILES=$(git diff --name-only "refs/remotes/origin/$BASE_REF...$HEAD_REF" | grep '\.tf$' || echo ""
+          FILES=$(git diff --name-only "refs/remotes/origin/$BASE_REF...$HEAD_REF" | grep '\.tf$' || echo "")
           DIRS=()
           for file in $FILES; do
             DIR=$(dirname "$file")
@@ -66,7 +65,5 @@ jobs:
       - name: Terraform Plan
         run: |
           echo "Running Terraform Plan for directory: ${{ matrix.directory }}"
-          # Instead of 'uses', we use 'run' for custom script, replace with actual Terraform command
+          # Replace with actual Terraform command
           # Example: terraform plan -path=${{ matrix.directory }}
-
-  # Additional jobs for 'terraform apply', 'terraform yolo', etc. can be added similarly
