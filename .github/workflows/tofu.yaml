@@ -8,42 +8,46 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  terraform-action:
+  prepare-matrix:
     if: >-
       contains(github.event.comment.body, 'terraform plan') ||
       contains(github.event.comment.body, 'terraform apply') ||
       contains(github.event.comment.body, 'terraform yolo')
     runs-on: ubuntu-latest
-
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Extract Command and Directory
-      id: extract
-      run: |
-        COMMENT="${{ github.event.comment.body }}"
-        if [[ "$COMMENT" =~ terraform\ plan\ (.+) ]]; then
-          echo "COMMAND=plan" >> $GITHUB_ENV
-          DIRECTORY="${BASH_REMATCH[1]}"
-        elif [[ "$COMMENT" =~ terraform\ apply\ (.+) ]]; then
-          echo "COMMAND=apply" >> $GITHUB_ENV
-          DIRECTORY="${BASH_REMATCH[1]}"
-        elif [[ "$COMMENT" =~ terraform\ yolo\ (.+) ]]; then
-          echo "COMMAND=yolo" >> $GITHUB_ENV
-          DIRECTORY="${BASH_REMATCH[1]}"
-        fi
-        echo "DIRECTORY=$DIRECTORY" >> $GITHUB_ENV
+      - name: Find Modified Terraform Directories
+        id: set-matrix
+        run: |
+          FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '\.tf$' || echo "")
+          DIRS=""
+          for file in $FILES; do
+            DIR=$(dirname "$file")
+            DIRS="$DIRS $DIR"
+          done
+          UNIQUE_DIRS=$(echo $DIRS | tr ' ' '\n' | sort -u | awk '{print "{\"path\":\""$0"\"}"}')
+          echo "::set-output name=matrix::[$UNIQUE_DIRS]"
 
+  terraform-action:
+    needs: prepare-matrix
+    if: >-
+      contains(github.event.comment.body, 'terraform plan') ||
+      contains(github.event.comment.body, 'terraform apply') ||
+      contains(github.event.comment.body, 'terraform yolo')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: terraform plan
-      if: env.COMMAND == 'plan'
-      uses: dflook/terraform-plan@v1
-      with:
-        path: ${{ env.DIRECTORY }}
-
-    - name: terraform apply
-      if: env.COMMAND == 'apply'
-      uses: dflook/terraform-apply@v1
-      with:
-        path: ${{ env.DIRECTORY }}
+      - name: Run Terraform Action
+        if: contains(github.event.comment.body, 'terraform ' + matrix.command)
+        uses: dflook/terraform-${{ matrix.command }}@v1
+        with:
+          path: ${{ matrix.path }}
