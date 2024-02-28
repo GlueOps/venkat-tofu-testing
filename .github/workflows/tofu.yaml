@@ -43,6 +43,8 @@ jobs:
           JSON_FMT=$(IFS=,; echo "[{\"directory\":\"${UNIQUE_DIRS[*]}\"}]" | sed 's/ /\", \"directory\":\"/g')
           echo $JSON_FMT
           echo "::set-output name=matrix::{\"include\":$JSON_FMT}"
+          echo "Matrix output: ${{ steps.set-matrix.outputs.matrix }}"
+
 
 
   terraform-plan:
