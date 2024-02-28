@@ -1,9 +1,8 @@
 name: terraform Workflow
 
 on:
-  # issue_comment:
-  #   types: [created]
-  push:
+  issue_comment:
+    types: [created]
 
 jobs:
   prepare-matrix:
