@@ -6,10 +6,7 @@ env:
 
 name: terraform Workflow
 
-on:
-  push:
-  pull_request:
-    - created
+on: [push, pull_request]
 
 
 jobs:
