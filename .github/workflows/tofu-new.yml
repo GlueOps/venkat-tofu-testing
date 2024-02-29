@@ -7,8 +7,7 @@ env:
 name: terraform Workflow
 
 on:
-  issue_comment:
-    types: [created]
+  push:
 
 
 jobs:
