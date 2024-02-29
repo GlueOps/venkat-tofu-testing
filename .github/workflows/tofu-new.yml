@@ -8,6 +8,8 @@ name: terraform Workflow
 
 on:
   push:
+  pull_request:
+    - created
 
 
 jobs:
