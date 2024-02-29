@@ -8,8 +8,6 @@ name: terraform Workflow
 
 on:
   pull_request:
-    paths-ignore:
-      - '**.md'
 
 
 jobs:
