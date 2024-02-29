@@ -4,7 +4,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-name: terraform Workflow
+name: terraform Workflow new
 
 on:
   pull_request:
