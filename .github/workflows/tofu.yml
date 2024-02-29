@@ -2,7 +2,7 @@
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN_VENKAT_ACCOUNT }}
 
 name: terraform Workflow new
 
