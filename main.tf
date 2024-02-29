@@ -21,7 +21,7 @@ terraform {
 }
 
 provider "cloudflare" {
- 
+
 }
 
 
