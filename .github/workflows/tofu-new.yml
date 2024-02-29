@@ -7,11 +7,6 @@ env:
 name: terraform Workflow
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
   pull_request:
     paths-ignore:
       - '**.md'
