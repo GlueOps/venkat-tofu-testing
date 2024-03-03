@@ -5,7 +5,7 @@
 
 resource "random_integer" "priority" {
   min = 1
-  max = 500
+  max = 5000
 }
 
 
