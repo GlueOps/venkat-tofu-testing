@@ -27,7 +27,7 @@ provider "cloudflare" {
 
 resource "cloudflare_record" "fake-domain-record" {
   zone_id = "ad02d78e42f142839dca4e63a1929097"
-  name    = "yolooooooooo"
+  name    = "yolo-tofu"
   value   = "8.8.8.8"
   type    = "A"
   ttl     = 3600
