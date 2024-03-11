@@ -1,4 +1,4 @@
-resource "random_integer" "priority" {
+resource "random_integer" "demo" {
   for_each = { for i in range(100) : tostring(i) => i }
 
   min = 1
